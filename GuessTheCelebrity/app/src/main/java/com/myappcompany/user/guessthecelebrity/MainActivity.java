@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import java.io.InputStream;
@@ -15,14 +16,47 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
 
+    ImageView imageView;
+
+    Button button1;
+    Button button2;
+    Button button3;
+    Button button4;
+
     ArrayList<String> celebURLS= new ArrayList<>();
     ArrayList<String> celebNames= new ArrayList<>();
+
+    String [] answers= new String[4];
+
+    int chosenCelebIndex;
+
+    public class ImageDownloader extends AsyncTask<String, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(String... urls) {
+            try {
+
+                URL url = new URL(urls[0]);
+
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+                InputStream inputStream = connection.getInputStream();
+                Bitmap myBitmap = BitmapFactory.decodeStream(inputStream);
+                return myBitmap;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+    }
 
     public class DownloadContent extends AsyncTask<String, Void, String>{
 
@@ -69,11 +103,71 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void newQuestion() {
+        try {
+            Random rand = new Random();
+
+            //random index of a celebrity from celebURLS
+            chosenCelebIndex = rand.nextInt(celebURLS.size());
+
+            ImageDownloader imageTask = new ImageDownloader();
+
+            //get a random celeb from celebURLS
+            Bitmap celebImage = imageTask.execute(celebURLS.get(chosenCelebIndex)).get();
+
+            imageView.setImageBitmap(celebImage);
+
+            //declaring a random correct option from 0 to 3
+            int correctLocation= rand.nextInt(4);
+
+            int incorrectAnswerLocation;
+
+
+            for (int i=0; i<4; i++){
+
+                //if index is the correct option, correct answer is the chosen celebrity
+                if (i== correctLocation){
+                    answers[i]= celebNames.get(chosenCelebIndex);
+                }
+
+                else {
+                    incorrectAnswerLocation= rand.nextInt(celebNames.size());
+
+                    while (incorrectAnswerLocation== chosenCelebIndex ){
+                        incorrectAnswerLocation= rand.nextInt(celebNames.size());
+                    }
+
+                    answers[i]=celebNames.get(incorrectAnswerLocation);
+                }
+
+
+
+            }
+
+            button1.setText(answers[0]);
+            button2.setText(answers[1]);
+            button3.setText(answers[2]);
+            button4.setText(answers[3]);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        imageView = (ImageView) findViewById(R.id.imageView);
+
+        button1= (Button) findViewById(R.id.button1);
+        button2= (Button) findViewById(R.id.button2);
+        button3= (Button) findViewById(R.id.button3);
+        button4= (Button) findViewById(R.id.button4);
+
+
 
         DownloadContent task= new DownloadContent();
         String result= "";
@@ -106,7 +200,10 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
+
+        newQuestion();
+
+    }
 }
 
 
