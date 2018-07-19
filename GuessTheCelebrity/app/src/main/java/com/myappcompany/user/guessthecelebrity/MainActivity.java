@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> celebURLS= new ArrayList<>();
     ArrayList<String> celebNames= new ArrayList<>();
 
-    String [] answers= new String[4];
+    String[] answers= new String[4];
 
     int chosenCelebIndex;
 
@@ -110,6 +110,8 @@ public class MainActivity extends AppCompatActivity {
             //random index of a celebrity from celebURLS
             chosenCelebIndex = rand.nextInt(celebURLS.size());
 
+            Log.i("Chosen celeb", celebNames.get(chosenCelebIndex));
+
             ImageDownloader imageTask = new ImageDownloader();
 
             //get a random celeb from celebURLS
@@ -137,8 +139,10 @@ public class MainActivity extends AppCompatActivity {
                         incorrectAnswerLocation= rand.nextInt(celebNames.size());
                     }
 
-                    answers[i]=celebNames.get(incorrectAnswerLocation);
+                    answers[i]= celebNames.get(incorrectAnswerLocation);
                 }
+
+                Log.i("Celeb Array", String.valueOf(answers));
 
 
 
@@ -152,6 +156,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void optionPressed(View view){
+        newQuestion(); //change this since you need to chenge the answers array
     }
 
 
@@ -197,11 +205,12 @@ public class MainActivity extends AppCompatActivity {
                 celebNames.add(mm.group(1));
             }
 
+            newQuestion();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-        newQuestion();
 
     }
 }
