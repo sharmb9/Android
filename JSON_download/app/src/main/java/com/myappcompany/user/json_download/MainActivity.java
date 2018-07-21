@@ -6,9 +6,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -53,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 return result;
             } catch (Exception e) {
                 e.printStackTrace();
+                Toast.makeText(MainActivity.this, "Wrong input", Toast.LENGTH_SHORT).show();
                 return null;
             }
 
@@ -91,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
             }catch (Exception e){
                 e.printStackTrace();
+                Toast.makeText(MainActivity.this, "Wrong input", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -100,11 +104,16 @@ public class MainActivity extends AppCompatActivity {
         String userCity= cityText.getText().toString();
         DownloadTask task= new DownloadTask();
 
+        //Hides the keyboard
+        InputMethodManager mgr= (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        mgr.hideSoftInputFromInputMethod(cityText.getWindowToken(),0);
+
         try {
             task.execute("https://openweathermap.org/data/2.5/weather?q=" + userCity + "&appid=b6907d289e10d714a6e88b30761fae22").get(); //basically executes the methods under DonloadTask
 
         } catch (Exception e) {
             e.printStackTrace();
+            Toast.makeText(MainActivity.this, "Wrong input", Toast.LENGTH_SHORT).show();
         }
     }
 
