@@ -74,24 +74,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         locationManager= (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         locationListener= new LocationListener() {
+
+
+
             @Override
             public void onLocationChanged(Location location) {
 
                 // Add a marker at user location and move the camera
                 LatLng userLocation= new LatLng(location.getLatitude(), location.getLongitude());
                 mMap.addMarker(new MarkerOptions().position(userLocation).title("User Location"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14));
 
                 //Get address of user using reverse geo-coding
                 Geocoder geocoder= new Geocoder(getApplicationContext(), Locale.getDefault());
+
+                String address= "";
 
                 try {
                     //put data about user location in List
                     List<Address> addressList= geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
+
                     if (addressList != null && addressList.size() != 0){
 
-                        String address= "";
 
                         //street address (980)
                         if (addressList.get(0).getFeatureName()!= null){
@@ -120,16 +125,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         Toast.makeText(MapsActivity.this, address, Toast.LENGTH_SHORT).show();
 
-                        final String finalAddress = address;
-                        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
-                            @Override
-                            public void onMapLongClick(LatLng latLng) {
-                                Intent intent= new Intent(getApplicationContext(), AddressActivity.class);
-                                intent.putExtra("Address", finalAddress);
-                                startActivity(intent);
-                            }
-                        });
-
                     }
 
                     }
@@ -138,6 +133,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
 
 
+                final String finalAddress = address;
+                mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        Intent intent= new Intent(getApplicationContext(), AddressActivity.class);
+                        intent.putExtra("Address", finalAddress);
+                        startActivity(intent);
+                    }
+                });
 
             }
 
@@ -156,6 +160,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             }
         };
+
 
         //checking if we actually have location permission otherwise ask(the dialogue box)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
