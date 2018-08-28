@@ -1,20 +1,25 @@
 package com.myappcompany.user.webviews;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> titles= new ArrayList<>();
     ArrayAdapter arrayAdapter;
+    ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        ListView listView= findViewById(R.id.listView);
+        listView= findViewById(R.id.listView);
         arrayAdapter= new ArrayAdapter(this, android.R.layout.simple_list_item_1, titles);
         listView.setAdapter(arrayAdapter);
 
@@ -84,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
                     numberOfItems= jsonArray.length();
                 }
 
+
+
                 //now we will puyt each article id into a url which loads the api for individual article ("https://hacker-news.firebaseio.com/v0/item/+ articleID" + ".json?print=pretty")
                 for (int i = 0; i<numberOfItems; i++){
 
@@ -110,6 +118,33 @@ public class MainActivity extends AppCompatActivity {
 
                     Log.i("Articel Info for" + articleID + " : ", articelInfo);
 
+                    //converting the articelInfo string to JSONObject
+                    JSONObject jsonObject= new JSONObject(articelInfo);
+
+
+                    //Also making sure title and url are not null
+                    if (!jsonObject.isNull("title") && !jsonObject.isNull("url")){
+                        String articleTitle= jsonObject.getString("title");
+                        final String articelURl= jsonObject.getString("url");
+                        titles.add(articleTitle);
+                        arrayAdapter.notifyDataSetChanged();
+                        /*url= new URL(articelURl);
+                        connection= url.openConnection();
+                        connection.connect();*/
+
+                        //loads the url and opens it in a new activity on clicking the news title
+                        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                Intent intent= new Intent(getApplicationContext(), NewsActivity.class);
+                                intent.putExtra("NewsURL", articelURl);
+                                startActivity(intent);
+
+                            }
+                        });
+
+                    }
+
 
                 }
 
@@ -123,6 +158,8 @@ public class MainActivity extends AppCompatActivity {
 
             return null;
         }
+
+
     }
 
 }
