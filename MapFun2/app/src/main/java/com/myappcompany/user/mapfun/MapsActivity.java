@@ -22,6 +22,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -40,24 +41,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
 
-    LocationManager locationManager;
-    LocationListener locationListener;
-
-//   what to do after permission result
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-//        if permission has been granted
-        if(requestCode==1){
-            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
-                }
-            }
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +51,70 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
 
+    }
+
+    //Loads markers from dataset to google maps
+    public void loadMarkers(String dataset){
+        List<LatLng> latLngList;
+//        change the file to parking spots because that is what we are supposed to show with markers
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open(dataset)))) {
+            //an arrayList of type LatLng(40,95)
+            latLngList = new ArrayList<LatLng>();
+            String line = "";
+//        skips first line
+            try {
+                reader.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            int count = 0;
+            try {
+                while (count <= 15) // Reads first 15 coordinates to load data quickly, change this later to search coordinates within 500 m os searches location
+                {
+                    line = reader.readLine();
+                    //converts address to coordinates
+                    LatLng address = getLocationFromAddress(this, line);
+                    //adds to convereted coordinates to arrayList
+                    latLngList.add(new LatLng(address.latitude, address.longitude));
+                    count++;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            int coordCount=0;
+            for(LatLng pos : latLngList)
+            {
+//                Log.i("Position", String.valueOf(pos));
+                LatLng parkingSpot = new LatLng(pos.latitude,pos.longitude);
+                //adding different color markers to different coordinates, will change this later where colors will be assigned according to safety level
+                if(coordCount<=5){
+                    mMap.addMarker(new MarkerOptions()
+                            .position(parkingSpot)
+                            .title("Parking Spot")// change title to something more descriptive
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)));
+                }
+                else if (coordCount>5 && coordCount <=10){
+                    mMap.addMarker(new MarkerOptions()
+                            .position(parkingSpot)
+                            .title("Parking Spot")// change title to something more descriptive
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                }
+                else{
+                    mMap.addMarker(new MarkerOptions()
+                            .position(parkingSpot)
+                            .title("Parking Spot")// change title to something more descriptive
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                }
+
+                coordCount++;
+            }
+            //ZOOMS camera to first location from dataset for now, will change location later
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLngList.get(1),12));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void onMapSearch(View view){
@@ -83,11 +130,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Address address = addressList.get(0);
-            LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+            Address searchedAddress = addressList.get(0);
+            LatLng latLng = new LatLng(searchedAddress.getLatitude(), searchedAddress.getLongitude());
             //adds marker to searched location(will change color of this later to make it distinct from parking spots
-            mMap.addMarker(new MarkerOptions().position(latLng).title("Marker"));
+            mMap.addMarker(new MarkerOptions().position(latLng).title("Location"));
             mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+
+            //loads parkings spots
+            loadMarkers("final_parking_zones.csv");
         }
     }
 
@@ -131,49 +181,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        //show a marker here too
         mMap = googleMap;
+        // Add a marker in Sydney and move the camera
+        LatLng sydney = new LatLng(41.8781, -87.62938);
+        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Chicago"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
 
-        InputStream instream = null;
-
-        List<LatLng> latLngList;
-//        change the file to parking spots because that is what we are supposed to show with markers
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open("final_parking_zones.csv")))) {
-            //an arrayList of type LatLng(40,95)
-            latLngList = new ArrayList<LatLng>();
-            String line = "";
-//        skips first line
-            try {
-                reader.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            int count = 0;
-            try {
-                while (count <= 5) // Reads first 5 coordinates to load data quickly, change this later to search coordinates within 500 m os searches location
-                {
-                    line = reader.readLine();
-                    LatLng address = getLocationFromAddress(this, line);
-                    //adds to convereted coordinates to arrayList
-                    latLngList.add(new LatLng(address.latitude, address.longitude));
-                    count++;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            for(LatLng pos : latLngList)
-            {
-//                Log.i("Position", String.valueOf(pos));
-                LatLng parkingSpot = new LatLng(pos.latitude,pos.longitude);
-                mMap.addMarker(new MarkerOptions()
-                        .position(parkingSpot)
-                        .title("Parking Spot")); // Don't necessarily need title
-            }
-            //ZOOMS camera, will change location later
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLngList.get(1),12));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        };
     }
 
